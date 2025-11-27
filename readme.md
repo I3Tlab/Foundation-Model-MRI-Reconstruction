@@ -6,7 +6,7 @@
 This repository provides the official implementation of the paper: **[On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction](https://arxiv.org/abs/2511.19641)**.
 
 ## Introduction
-We investigate whether vision-language foundation models can enhance undersampled MRI reconstruction. Our approach leverages high-level semantic embeddings from pretrained vision-language foundation models (specifically [Janus](https://huggingface.co/deepseek-ai/Janus-Pro-1B)) to guide the reconstruction process through contrastive learning. This aligns the reconstructed image representations with a target semantic distribution, ensuring consistency with high-level perceptual cues. The proposed objective works with various deep learning-based reconstruction methods and can flexibly incorporate semantic priors from multimodal sources. We evaluated reconstruction results guided by priors derived from either image-only or image-language auxiliary information.
+We investigate whether vision-language foundation models can enhance undersampled MRI reconstruction. Our approach leverages high-level semantic embeddings from pretrained vision-language foundation models (specifically [Janus](https://huggingface.co/deepseek-ai/Janus-Pro-1B)) to guide the reconstruction process through contrastive learning. This aligns the reconstructed image embedding with a target semantic distribution, ensuring consistency with high-level perceptual cues. The proposed objective works with various deep learning-based reconstruction methods and can flexibly incorporate semantic priors from multimodal sources. We evaluated reconstruction results guided by prior embeddings derived from either image-only or image-language auxiliary information.
 
 ![Figure1.jpg](Figure1.jpg)
 
@@ -16,7 +16,6 @@ We investigate whether vision-language foundation models can enhance undersample
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Configuration](#configuration)
 - [Method Overview](#method-overview)
 - [Demo Data](#demo-data)
 - [Related Resources](#related-resources)
@@ -67,72 +66,94 @@ pip install torch torchvision torchaudio
 pip install transformers scipy numpy h5py scikit-image scikit-learn
 pip install sigpy tqdm tensorboard matplotlib umap-learn einops
 
-# Install Janus (foundation model)
-cd Janus
-pip install -e .
-cd ..
+# Install minLoRA
+Install minLoRA from the link: https://github.com/cchangcs/minLoRA
 
-# Install minLoRA for efficient model adaptation
-pip install minlora  # or from: https://github.com/changjonathanc/minLoRA
 ```
 
 ### Download Janus-Pro Weights
 
-Download the pretrained Janus-Pro-1B model from [HuggingFace](https://huggingface.co/deepseek-ai/Janus-Pro-1B):
+Download the pretrained Janus-Pro-1B model from [HuggingFace](https://huggingface.co/deepseek-ai/Janus-Pro-1B), and update the `foundation_model_path` in the demo scripts.
 
-```python
-from transformers import AutoModelForCausalLM
-model = AutoModelForCausalLM.from_pretrained("deepseek-ai/Janus-Pro-1B", trust_remote_code=True)
-```
+### Download FastMRI Data
 
-Or manually download and update the `foundation_model_path` in the demo scripts.
+The FastMRI dataset is required for extracting image embeddings. To access the dataset:
+
+1. **Register and Request Access**: Visit the [FastMRI website](https://fastmri.org/) and complete the data access request form.
+
+2. **Download the Dataset**: Once approved, download the knee or brain MRI data. For this project, we primarily use:
+   - `knee_multicoil_train`
+   - `knee_multicoil_val`
+
+3. **Organize the Data**: Place the downloaded data in your preferred directory and update the data paths in the demo scripts accordingly.
+
+
+For quick testing, we provide:
+
+- `demo_data.mat`: A multi-coil k-space slice for demo reconstruction
+- `image_examples/`: Example images used to generate image-language embeddings
+- `prior_embeddings_image_language/`: Pre-generated image-language embeddings 
+
 
 ## Usage
 
+> **Important**: Before running any scripts, update the following paths in the code to match your environment:
+> ```python
+> foundation_model_path = "/path/to/Janus-Pro-1B"
+> feat_path = "/path/to/prior_embeddings"
+> ```
+
 ### 1. Feature Extraction
 
-Before reconstruction, extract prior embeddings from auxiliary images:
+Before reconstruction, extract prior embeddings from auxiliary images.
 
 #### Image Embeddings
+
+> **Note**: You must download the FastMRI dataset before running this script, as the raw data files are too large to include in this repository. Please update the data paths in the script to point to your local data directory.
+
 ```bash
 python feature_extraction_image.py
 ```
 
+This generates embeddings stored in `prior_embeddings/` with UMAP visualization.
+
 #### Image-Language Embeddings
+
+We provide example images in `image_examples/` for extracting image-language embeddings.
+
 ```bash
 python feature_extraction_image_language.py
 ```
 
-This generates embeddings stored in:
-- `prior_embeddings/` - Image embeddings at multiple feature levels
-- `prior_embeddings_image_language/` - Image-language embeddings with UMAP visualization
+This generates embeddings stored in `prior_embeddings_image_language/` with UMAP visualization.
 
 ### 2. MRI Reconstruction
 
-We provide four reconstruction approaches:
+We provide four reconstruction approaches optimized by data consistency and contrastive loss functions:
 
-#### Image-Language Guided Reconstruction (Recommended)
-Combines vision and language understanding for semantic-aware reconstruction:
-```bash
-python image_language_demo.py
-```
 
-#### Implicit Neural Representation (INR)
-Uses continuous coordinate-based neural network:
-```bash
-python INR_demo.py
-```
-
-#### UNet-based Reconstruction
-Standard UNet with foundation model guidance:
+#### U-Net-based Reconstruction
+Learns a direct transformation from undersampled inputs to reconstructed images:
 ```bash
 python Unet_demo.py
 ```
 
 #### Unrolled Network Reconstruction
-Physics-informed unrolled architecture:
+Unrolls a variable-splitting iterative reconstruction algorithm into a sequence of learnable stages. Each stage alternates between a U-Net and an explicit data-consistency step solved using conjugate gradient descent:
 ```bash
 python Unrolled_demo.py
+```
+
+#### Implicit Neural Representation (INR)
+Represents the MR image as a continuous function of spatial coordinates. The function is parameterized by an MLP, which takes spatial coordinates as input and predicts the corresponding image intensities:
+```bash
+python INR_demo.py
+```
+
+#### Image-Language Guided Reconstruction
+Combines vision and language understanding for semantic-aware reconstruction:
+```bash
+python image_language_demo.py
 ```
 
 ### 3. Results
@@ -145,22 +166,6 @@ Reconstruction results are saved in `reconstruction_results/`:
 Monitor training with TensorBoard:
 ```bash
 tensorboard --logdir=reconstruction_results/*/log
-```
-
-## Configuration
-
-Key parameters in demo scripts:
-
-```python
-# Training settings
-epochs = 200              # Number of training epochs
-lr = 1e-3                 # Learning rate
-accR = 4                  # Acceleration rate (undersampling factor)
-niters = 8                # Number of unrolling iterations (for unrolled networks)
-
-# Paths (update these for your environment)
-foundation_model_path = "/path/to/Janus-Pro-1B"
-feat_path = "/path/to/prior_embeddings"
 ```
 
 ## Method Overview
@@ -193,11 +198,6 @@ prompt = 'Determine whether this image is high-quality or low-quality.'
 
 This allows the model to leverage the foundation model's understanding of image quality for better reconstruction guidance.
 
-
-## Demo Data
-
-The repository includes `demo_data.mat` containing multi-coil k-space data for testing. The data structure:
-- Shape: `(Nsli, Nchl, Nrd, Npe)` - (slices, coils, readout, phase encoding)
 
 ## Related Resources
 
