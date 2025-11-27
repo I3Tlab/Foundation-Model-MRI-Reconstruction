@@ -18,9 +18,9 @@ def compute_cost_ksp(output, target, mask, csm):
     return cost
 
 def compute_TV_loss(x):
-    N1, N2  = x.shape[-2], x.shape[-1]
-    tv_loss = (torch.sum(torch.abs(x[:,:,1:, :] - x[:,:,:N1-1, :])) + torch.sum(torch.abs(x[:,:,:, 1:] - x[:,:,:,:N2-1])))/ ((N1-1)*(N2-1))
-        
+    N1, N2  = x.shape[0], x.shape[1]
+    tv_loss = (torch.sum(torch.abs(x[1:, :, :] - x[:N1-1, :, :])) + torch.sum(torch.abs(x[:, 1:, :] - x[:,:N2-1,:])))/ ((N1-1)*(N2-1))
+
     return tv_loss
 
 
@@ -37,7 +37,7 @@ class ContrastiveLoss_image(nn.Module):
 
     def forward(self, query, positives, negatives, W, mu):
         """
-        query: (1, 576, 1024)
+        query: (N1, 576, 1024)
         positives: (N, 576, 1024)
         negatives: (M, 576, 1024)
         """
@@ -67,43 +67,32 @@ class ContrastiveLoss_image(nn.Module):
         loss = -torch.log(numerator / denominator + 1e-8)
         return loss
     
-def improved_multi_pos_contrastive_loss(query, positives, negatives, W, mu, tau_pos=0.1, tau_neg=0.7):
-    """
-    query: (1, 576, 1024)
-    positives:(N, 576, 1024)
-    negatives:(M, 576, 1024)
-    Improved version: 
-    - log-sum-exp for positives (encourages pulling toward entire pos cluster)
-    - larger temperature for negatives (weaker push-away)
-    """
+def ContrastiveLoss_language(
+        query, pos_features, neg_features,
+        tau_pos=0.1, tau_neg=0.7):
+        """
+        Improved version: 
+        - log-sum-exp for positives (encourages pulling toward entire pos cluster)
+        - larger temperature for negatives (weaker push-away)
+        """
 
-    B,N,C = positives.shape
-    query= query.reshape(-1, C)
-    positives = positives.reshape(-1, C)
-    negatives = negatives.reshape(-1, C)
+        # Normalize
+        query = F.normalize(query, p=2, dim=-1).unsqueeze(0)      # (1,4,D)
+        pos = F.normalize(pos_features, p=2, dim=-1).unsqueeze(1) # (P,1,D)
+        neg = F.normalize(neg_features, p=2, dim=-1).unsqueeze(1) # (Q,1,D)
 
-    # PCA projection
-    q_proj   = pca_transform(query, W, mu).reshape(1, N, -1)
-    pos_proj = pca_transform(positives, W, mu).reshape(B, N, -1)
-    neg_proj = pca_transform(negatives, W, mu).reshape(B, N, -1)
+        # cosine similarities
+        sim_pos = torch.sum(query * pos, dim=-1) / tau_pos  # (P,4)
+        sim_neg = torch.sum(query * neg, dim=-1) / tau_neg  # (Q,4)
 
-    # Normalize
-    query = F.normalize(q_proj, p=2, dim=-1)      # (1, 576, dim)
-    pos = F.normalize(pos_proj, p=2, dim=-1) # (N, 576, dim)
-    neg = F.normalize(neg_proj, p=2, dim=-1) # (M, 576, dim)
+        # log-sum-exp over positives (stronger cluster-wise pull)
+        lse_pos = torch.logsumexp(sim_pos, dim=0)  # (4,)
 
-    # cosine similarities
-    sim_pos = torch.sum(query * pos, dim=-1).mean(-1) / tau_pos  # (P,4)
-    sim_neg = torch.sum(query * neg, dim=-1).mean(-1) / tau_neg  # (Q,4)
+        # log-sum-exp over all (pos + neg)
+        all_sim = torch.cat([sim_pos, sim_neg], dim=0)
+        lse_all = torch.logsumexp(all_sim, dim=0)
 
-    # log-sum-exp over positives (stronger cluster-wise pull)
-    lse_pos = torch.logsumexp(sim_pos, dim=0)  # (4,)
+        loss = (-(lse_pos - lse_all)).sum()
 
-    # log-sum-exp over all (pos + neg)
-    all_sim = torch.cat([sim_pos, sim_neg], dim=0)
-    lse_all = torch.logsumexp(all_sim, dim=0)
-
-    loss = (-(lse_pos - lse_all)).sum()
-
-    return loss
+        return loss
 
