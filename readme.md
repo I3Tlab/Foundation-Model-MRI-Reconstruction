@@ -29,9 +29,9 @@ We investigate whether vision-language foundation models can enhance undersample
 ```
 Foundation-Model-MRI-Reconstruction/
 ├── image_language_demo.py          # Image-language embedding-guided reconstruction
-├── INR_demo.py                     # Implicit Neural Representation based reconstruction guided image-only embeddings
-├── Unet_demo.py                    # UNet-based reconstruction guided image-only embeddings
-├── Unrolled_demo.py                # Unrolled network reconstruction guided image-only embeddings
+├── INR_demo.py                     # Implicit Neural Representation (INR)-based reconstruction guided by image-only embeddings
+├── Unet_demo.py                    # UNet-based reconstruction guided by image-only embeddings
+├── Unrolled_demo.py                # Unrolled network reconstruction guided by image-only embeddings
 ├── model.py                        # Model definitions (Unrolled, SIREN, CG solver)
 ├── loss_function.py                # Contrastive and reconstruction loss functions
 ├── utils.py                        # Utility functions for data processing
