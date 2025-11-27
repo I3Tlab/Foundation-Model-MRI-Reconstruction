@@ -18,7 +18,6 @@ We investigate whether vision-language foundation models can enhance undersample
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Method Overview](#method-overview)
-- [Architecture](#architecture)
 - [Demo Data](#demo-data)
 - [Related Resources](#related-resources)
 - [Contact](#contact)
@@ -60,7 +59,7 @@ Foundation-Model-MRI-Reconstruction/
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/Foundation-Model-MRI-Reconstruction.git
+git clone https://github.com/I3Tlab/Foundation-Model-MRI-Reconstruction.git
 cd Foundation-Model-MRI-Reconstruction
 
 # Install dependencies
@@ -194,20 +193,6 @@ prompt = 'Determine whether this image is high-quality or low-quality.'
 
 This allows the model to leverage the foundation model's understanding of image quality for better reconstruction guidance.
 
-## Architecture
-
-### Unrolled Network (Unet_CG)
-- Alternates between learned UNet regularizer and explicit data consistency (CG solver)
-- Each unrolling stage uses a separate UNet with LoRA adaptation
-
-### SIREN (INR)
-- Sinusoidal representation network for continuous image representation
-- Coupled with CNN adaptor for refinement
-
-### Data Consistency
-- Multi-coil SENSE reconstruction
-- Conjugate gradient (CG) solver for efficient DC operation
-- ESPIRiT for coil sensitivity estimation
 
 ## Demo Data
 
