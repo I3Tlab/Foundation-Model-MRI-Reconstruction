@@ -16,8 +16,6 @@ We investigate whether vision-language foundation models can enhance undersample
 - [Project Structure](#project-structure)
 - [Installation](#installation)
 - [Usage](#usage)
-- [Method Overview](#method-overview)
-- [Demo Data](#demo-data)
 - [Related Resources](#related-resources)
 - [Contact](#contact)
 
@@ -167,37 +165,6 @@ Monitor training with TensorBoard:
 ```bash
 tensorboard --logdir=reconstruction_results/*/log
 ```
-
-## Method Overview
-
-### Contrastive Learning Framework
-
-The method uses contrastive learning to leverage foundation model embeddings:
-
-1. **Prior Embedding Extraction**: Extract features from auxiliary high-quality (positive) and undersampled/degraded (negative) images using the foundation model's vision encoder
-
-2. **Reconstruction Network Training**: During self-supervised training, the reconstructed image is passed through the same vision encoder
-
-3. **Contrastive Loss**: The reconstruction embeddings are pushed toward positive embeddings and away from negative embeddings:
-
-```python
-# Multi-level contrastive loss
-con_loss = 0.01 * criterion(features[0], pos_feat[:,0], neg_feat[:,0], W1, mu1) + \
-           0.5  * criterion(features[12], pos_feat[:,1], neg_feat[:,1], W2, mu2) + \
-           1.0  * criterion(features[23], pos_feat[:,2], neg_feat[:,2], W3, mu3)
-```
-
-### Image-Language Embedding
-
-For enhanced semantic guidance, we combine vision and language:
-
-```python
-prompt = 'Determine whether this image is high-quality or low-quality.'
-# Image + prompt → Language model → Image-language embedding
-```
-
-This allows the model to leverage the foundation model's understanding of image quality for better reconstruction guidance.
-
 
 ## Related Resources
 
