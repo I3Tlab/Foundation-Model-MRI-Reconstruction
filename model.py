@@ -1,8 +1,13 @@
 '''
-This is a implementation of the unrolled model, which unrolls a variable-splitting iterative reconstruction algorithm into a sequence of learnable stages. 
-Each stage alternates between a U-Net and an explicit data-consistency step solved using conjugate gradient descent.
+This is a implementation of 
+(1) the unrolled model, which unrolls a variable-splitting iterative reconstruction algorithm into a sequence of learnable stages. 
+Each stage alternates between a U-Net and an explicit data-consistency step solved using conjugate gradient descent. 
+(2) Implicit neural representation (INR) network,
+which represents the MR image as a continuous function of spatial coordinates. 
+The function is parameterized by an MLP, which takes spatial coordinates as input and predicts the corresponding image intensities.
 '''
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.fft as fft
@@ -120,4 +125,66 @@ class Unet_CG(nn.Module):
             out.append(dc_output)
 
         return out, pred_x_list
+    
+
+class SirenLayer(nn.Module):
+    def __init__(self, in_f, out_f, w0=8, is_first=False, is_last=False):   #%%%%%%%%%% default 10
+        super().__init__()
+        self.in_f = in_f
+        self.w0 = w0
+        self.linear = nn.Linear(in_f, out_f)
+        self.is_first = is_first
+        self.is_last = is_last
+        self.init_weights()
+
+    def init_weights(self):
+        b = 1 / \
+            self.in_f if self.is_first else np.sqrt(6 / self.in_f) / self.w0
+        with torch.no_grad():
+            self.linear.weight.uniform_(-b, b)
+
+    def forward(self, x):
+        x = self.linear(x)
+        return x if self.is_last else torch.sin(self.w0 * x)
+
+
+def input_mapping(x, B):
+    if B is None:
+        return x
+    else:
+        x_proj = (2. * np.pi * x) @ B.t()
+        return torch.cat([torch.sin(x_proj), torch.cos(x_proj)], dim=-1)
+
+def siren_model(num_layers, input_dim, hidden_dim,out_dim,w0):
+    layers = [SirenLayer(input_dim, hidden_dim, w0=w0, is_first=True)]
+    for i in range(1, num_layers - 1):
+        layers.append(SirenLayer(hidden_dim, hidden_dim, w0=w0))
+    layers.append(SirenLayer(hidden_dim, out_dim, w0=w0, is_last=True))
+
+    return nn.Sequential(*layers)
+
+class CNN_Adaptor(nn.Module):
+    def __init__(self, in_channels=1, out_channels=1):
+        super(CNN_Adaptor, self).__init__()
+        
+        # First convolutional layer: from input to 64 channels
+        self.conv1 = nn.Conv2d(in_channels, 256, kernel_size=3, stride=1, padding=1)
+        
+        # Middle convolutional layer: 256 channels
+        self.conv2 = nn.Conv2d(256, 256, kernel_size=3, stride=1, padding=1)
+        
+        # Third convolutional layer: reduce to output channels
+        self.conv3 = nn.Conv2d(256, out_channels, kernel_size=3, stride=1, padding=1)
+
+    def forward(self, x):
+        # Apply first conv + ReLU
+        x = F.relu(self.conv1(x))
+        
+        # Apply second conv + ReLU
+        x = F.relu(self.conv2(x))
+        
+        # Apply third conv (no activation if reconstruction is regression)
+        x = F.tanh(self.conv3(x))
+        
+        return x
     
