@@ -1,16 +1,31 @@
-# Foundation-Model-MRI-Reconstruction
+# On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction
 
-This repository provides an implementation of **foundation model guided self-supervised MRI reconstruction**. By leveraging high-level semantic embeddings from pretrained vision-language foundation models (specifically [Janus-Pro](https://huggingface.co/deepseek-ai/Janus-Pro-1B)), we guide the MRI reconstruction process through contrastive learning, eliminating the need for fully-sampled ground truth data during training.
+[![arXiv](https://img.shields.io/badge/arXiv-2511.19641-b31b1b.svg)](https://arxiv.org/abs/2511.19641)
 
-## 🌟 Key Features
 
-- **Self-supervised learning**: No fully-sampled ground truth required for training
-- **Foundation model guidance**: Utilizes semantic embeddings from pretrained vision-language models
-- **Contrastive learning**: Pushes reconstructions toward high-quality image representations
-- **Multiple architectures**: Supports UNet, Unrolled networks, and Implicit Neural Representations (INR)
-- **Multi-level feature fusion**: Leverages hierarchical features from the vision encoder
+This repository provides the official implementation of the paper: **[On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction](https://arxiv.org/abs/2511.19641)**.
 
-## 📁 Project Structure
+## Introduction
+We investigate whether vision-language foundation models can enhance undersampled MRI reconstruction. Our approach leverages high-level semantic embeddings from pretrained vision-language foundation models (specifically [Janus](https://huggingface.co/deepseek-ai/Janus-Pro-1B)) to guide the reconstruction process through contrastive learning. This aligns the reconstructed image representations with a target semantic distribution, ensuring consistency with high-level perceptual cues. The proposed objective works with various deep learning-based reconstruction methods and can flexibly incorporate semantic priors from multimodal sources. We evaluated reconstruction results guided by priors derived from either image-only or image-language auxiliary information.
+
+![Figure1.jpg](Figure1.jpg)
+
+
+## Table of Contents
+
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Method Overview](#method-overview)
+- [Architecture](#architecture)
+- [Demo Data](#demo-data)
+- [Related Resources](#related-resources)
+- [Contact](#contact)
+
+
+
+## Project Structure
 
 ```
 Foundation-Model-MRI-Reconstruction/
@@ -33,7 +48,7 @@ Foundation-Model-MRI-Reconstruction/
 └── prior_embeddings_image_language/  # Pre-computed embeddings
 ```
 
-## 🚀 Installation
+## Installation
 
 ### Prerequisites
 
@@ -73,7 +88,7 @@ model = AutoModelForCausalLM.from_pretrained("deepseek-ai/Janus-Pro-1B", trust_r
 
 Or manually download and update the `foundation_model_path` in the demo scripts.
 
-## 📖 Usage
+## Usage
 
 ### 1. Feature Extraction
 
@@ -133,7 +148,7 @@ Monitor training with TensorBoard:
 tensorboard --logdir=reconstruction_results/*/log
 ```
 
-## 🔧 Configuration
+## Configuration
 
 Key parameters in demo scripts:
 
@@ -149,7 +164,7 @@ foundation_model_path = "/path/to/Janus-Pro-1B"
 feat_path = "/path/to/prior_embeddings"
 ```
 
-## 📊 Method Overview
+## Method Overview
 
 ### Contrastive Learning Framework
 
@@ -179,7 +194,7 @@ prompt = 'Determine whether this image is high-quality or low-quality.'
 
 This allows the model to leverage the foundation model's understanding of image quality for better reconstruction guidance.
 
-## 📐 Architecture
+## Architecture
 
 ### Unrolled Network (Unet_CG)
 - Alternates between learned UNet regularizer and explicit data consistency (CG solver)
@@ -194,34 +209,25 @@ This allows the model to leverage the foundation model's understanding of image 
 - Conjugate gradient (CG) solver for efficient DC operation
 - ESPIRiT for coil sensitivity estimation
 
-## 📄 Demo Data
+## Demo Data
 
 The repository includes `demo_data.mat` containing multi-coil k-space data for testing. The data structure:
 - Shape: `(Nsli, Nchl, Nrd, Npe)` - (slices, coils, readout, phase encoding)
 
-## 🔗 Related Resources
+## Related Resources
 
 - [Janus-Pro Model](https://huggingface.co/deepseek-ai/Janus-Pro-1B)
 - [fastMRI Dataset](https://fastmri.org/)
 - [minLoRA](https://github.com/changjonathanc/minLoRA)
 
-## 📝 Citation
 
-If you find this work useful, please cite:
-
-```bibtex
-@article{foundation_mri_recon,
-  title={Foundation Model Guided Self-Supervised MRI Reconstruction},
-  author={},
-  journal={},
-  year={2025}
-}
-```
-
-## 📧 Contact
+## Contact
 
 For questions or issues, please open a GitHub issue or contact the authors.
 
-## 📜 License
+[Intelligent Imaging Innovation and Translation Lab](https://liulab.mgh.harvard.edu/) [[github]](https://github.com/I3Tlab) at the Athinoula A. Martinos Center of Massachusetts General Hospital and Harvard Medical School
+* Ruimin Feng (rfeng3@mgh.harvard.edu)
+* Fang Liu (fliu12@mgh.harvard.edu)
 
-This project is licensed under the MIT License. The use of Janus models is subject to the [DeepSeek Model License](https://github.com/deepseek-ai/Janus/blob/main/LICENSE-MODEL).
+149 13th Street, Suite 2301
+Charlestown, Massachusetts 02129, USA
