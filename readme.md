@@ -1,9 +1,9 @@
 # On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction
 
-[![arXiv](https://img.shields.io/badge/arXiv-2511.19641-b31b1b.svg)](https://arxiv.org/abs/2511.19641)
+[![MRM](https://img.shields.io/badge/MRM-Accepted-brightgreen)](https://onlinelibrary.wiley.com/doi/10.1002/mrm.70374)
 
 
-This repository provides the official implementation of the paper: **[On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction](https://arxiv.org/abs/2511.19641)**.
+This repository provides the official implementation of the paper: **[On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction](https://onlinelibrary.wiley.com/doi/10.1002/mrm.70374)**.
 
 ## Introduction
 We investigate whether vision-language foundation models can enhance undersampled MRI reconstruction. Our approach leverages high-level semantic embeddings from pretrained vision-language foundation models (specifically [Janus](https://huggingface.co/deepseek-ai/Janus-Pro-1B)) to guide the reconstruction process through contrastive learning. This aligns the reconstructed image embedding with a target semantic distribution, ensuring consistency with high-level perceptual cues. The proposed objective works with various deep learning-based reconstruction methods and can flexibly incorporate semantic priors from multimodal sources. We evaluated reconstruction results guided by prior embeddings derived from either image-only or image-language auxiliary information.
