@@ -172,6 +172,19 @@ tensorboard --logdir=reconstruction_results/*/log
 - [fastMRI Dataset](https://fastmri.org/)
 - [minLoRA](https://github.com/changjonathanc/minLoRA)
 
+## Citation
+```bibtex
+@article{feng2026,
+author = {Feng, Ruimin and He, Xingxin and Mercer, Ronald and Stewart, Zachary and Liu, Fang},
+title = {On the Utility of Foundation Models for Fast MRI: Vision-Language-Guided Image Reconstruction},
+journal = {Magnetic Resonance in Medicine},
+volume = {},
+number = {},
+pages = {},
+doi = {https://doi.org/10.1002/mrm.70374},
+url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/mrm.70374},
+}
+```
 
 ## Contact
 
